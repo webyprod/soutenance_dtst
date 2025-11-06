@@ -1,0 +1,10 @@
+users:
+  image: awsfox92/users-image:latest
+  servicePort: 8081
+  containerPort: 8080
+
+mysql:
+  image: mysql:8
+  rootPassword: jefferson
+  database: userdb
+  username: root
