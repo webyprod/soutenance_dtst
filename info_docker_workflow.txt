@@ -1,0 +1,22 @@
+-- Create a network for two containers to properly communicate between them
+docker network create users_mysql_db
+
+-- Create container for MySQL
+docker run --name mysql_database --network users_mysql_db -e MYSQL_ROOT_PASSWORD=jefferson -e MYSQL_DATABASE=userdb -d mysql:8
+
+-- Package project -- (under application.properties update -> spring.datasource.url)
+mvn clean package -DskipTests
+
+-- Create Dockerfile ---
+
+-- Create Image from Dockerfile --
+docker image build -t users-image .
+
+-- List images --
+docker images
+
+-- Create container --
+docker container run -d --name users-container --network users_mysql_db -p 8080:8080 users-image
+
+-- List current running containers --
+docker ps -a

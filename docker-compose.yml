@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  mysql_database:
+    image: mysql:8
+    container_name: mysql_database
+    environment:
+      MYSQL_ROOT_PASSWORD: jefferson
+      MYSQL_DATABASE: userdb
+    networks:
+      - users_mysql_db
+    restart: unless-stopped
+
+  users-container:
+    build:
+      context: .
+    image: users-image
+    container_name: users-container
+    ports:
+      - "8081:8080"
+    networks:
+      - users_mysql_db
+    depends_on:
+      - mysql_database
+    restart: unless-stopped
+
+networks:
+  users_mysql_db:
+    driver: bridge
