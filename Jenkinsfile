@@ -23,7 +23,8 @@ pipeline {
             }
                     steps {
                         withSonarQubeEnv('sonar') {
-                            sh "${scannerHome}/bin/sonar-scanner"
+                            //sh "${scannerHome}/bin/sonar-scanner"
+                            sh """ sonar-scanner -Dsonar.projectKey=fox_soutenance-project -Dsonar.organization=fox -Dsonar.sources=src -Dsonar.tests=test -Dsonar.java.binaries=target/classes -Dsonar.jacoco.reportPaths=target/jacoco.exec -Dsonar.login=75ac4edd86b51e32bb64871bf13e4be9827cd7a8 """
                         }
                     }
                 }
