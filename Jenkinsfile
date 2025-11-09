@@ -15,5 +15,17 @@ pipeline {
                 sh 'mvn clean install'
             }
         }
+
+        stage('SonarQube Analysis') {
+
+            environment {
+                scannerHome = tool 'sonar'
+            }
+                    steps {
+                        withSonarQubeEnv('sonar') {
+                            sh "${scannerHome}/bin/sonar-scanner"
+                        }
+                    }
+                }
     }
 }
