@@ -16,6 +16,12 @@ pipeline {
             }
         }
 
+        stage("test") {
+            steps {
+                sh 'mvn surefire-report:report'
+            }
+        }
+
         stage('SonarQube Analysis') {
 
             environment {
@@ -24,7 +30,14 @@ pipeline {
                     steps {
                         withSonarQubeEnv('sonar') {
                             //sh "${scannerHome}/bin/sonar-scanner"
-                            sh """ /home/ubuntu/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonar/bin/sonar-scanner -Dsonar.projectKey=fox_soutenance-project -Dsonar.organization=fox -Dsonar.sources=src/main/java -Dsonar.tests=src/test/java -Dsonar.java.binaries=target/classes -Dsonar.jacoco.reportPaths=target/jacoco.exec -Dsonar.login=75ac4edd86b51e32bb64871bf13e4be9827cd7a8 """
+                            sh """ /home/ubuntu/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonar/bin/sonar-scanner \
+                            -Dsonar.projectKey=fox_soutenance-project \
+                            -Dsonar.organization=fox \
+                            -Dsonar.sources=src/main/java \
+                            -Dsonar.tests=src/test/java \
+                            -Dsonar.java.binaries=target/classes \
+                            -Dsonar.jacoco.reportPaths=target/jacoco.exec \
+                            -Dsonar.login=75ac4edd86b51e32bb64871bf13e4be9827cd7a8 """
                         }
                     }
                 }
