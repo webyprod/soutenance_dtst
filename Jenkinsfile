@@ -58,11 +58,13 @@ pipeline {
         stage('Deploy to JFrog') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'jenkins-access-token', usernameVariable: 'JFROG_USER', passwordVariable: 'JFROG_TOKEN')]) {
-                    sh """
-                        curl -u $JFROG_USER:$JFROG_TOKEN -T target/demo-0.0.1-SNAPSHOT.jar \
-                        "https://trialy8qxe6.jfrog.io/artifactory/soutenance-project-libs-release/com/demo/0.0.1-SNAPSHOT/demo-0.0.1-SNAPSHOT.jar"
-                    """
-                }
+                            sh """
+                                curl -u $JFROG_USER:$JFROG_TOKEN -X PUT \
+                                -H "Content-Type: application/java-archive" \
+                                --upload-file target/demo-0.0.1-SNAPSHOT.jar \
+                                "https://trialy8qxe6.jfrog.io/artifactory/soutenance-project-libs-release/com/demo/0.0.1-SNAPSHOT/demo-0.0.1-SNAPSHOT.jar"
+                            """
+                        }
             }
         }
     }
