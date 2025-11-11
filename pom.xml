@@ -59,6 +59,13 @@
 		</dependency>
 	</dependencies>
 
+	<distributionManagement>
+		<repository>
+			<id>jfrog-release</id>
+			<url>https://trialy8qxe6.jfrog.io/artifactory/soutenance-project-libs-release</url>
+		</repository>
+	</distributionManagement>
+
 	<build>
 		<plugins>
 			<plugin>
