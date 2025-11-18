@@ -14,7 +14,7 @@ services:
   users-container:
     build:
       context: .
-    image: users-image
+    image: awsfox92/users-image:final
     container_name: users-container
     ports:
       - "8081:8080"
