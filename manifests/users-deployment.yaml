@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: users-container
-          image: awsfox92/users-image:latest
+          image: awsfox92/users-image:final
           ports:
             - containerPort: 8080
           env:
