@@ -42,7 +42,7 @@ pipeline {
             }
         }
 
-        /*stage("Quality Gate") {
+        stage("Quality Gate") {
             steps {
                 script {
                     timeout(time: 1, unit: 'HOURS') {
@@ -53,13 +53,13 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
 
-        stage('Deploy to JFrog') {
+        /*stage('Deploy to JFrog') {
             steps {
                 sh 'mvn deploy -DskipTests'
             }
-        }
+        }*/
         /*stage('Deploy to JFrog') {
             steps {
                 sh 'mvn deploy -DskipTests -DaltDeploymentRepository=jfrog-release::default::https://trialy8qxe6.jfrog.io/artifactory/soutenance-project-libs-release-local'
