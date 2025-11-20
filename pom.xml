@@ -68,7 +68,7 @@
 	<distributionManagement>
 		<repository>
 			<id>jfrog-release</id>
-			<url>https://trialy8qxe6.jfrog.io/artifactory/soutenance-project-libs-release-local</url>
+			<url>https://trialy8qxe6.jfrog.io/artifactory/soutenance-projet-libs-release-local</url>
 		</repository>
 	</distributionManagement>
 
