@@ -7,6 +7,7 @@ pipeline {
 
     environment {
         PATH = "/opt/apache-maven-3.9.11/bin:$PATH"
+        IMAGE_NAME = "trialy8qxe6.jfrog.io/soutenance-docker-local/soutenance-project:latest"
     }
 
     stages {
@@ -64,10 +65,22 @@ pipeline {
                 sh 'mvn deploy -DskipTests'
             }
         }
-        /*stage('Deploy to JFrog') {
+
+        stage('Build Docker Image') {
             steps {
-                sh 'mvn deploy -DskipTests -DaltDeploymentRepository=jfrog-release::default::https://trialy8qxe6.jfrog.io/artifactory/soutenance-project-libs-release-local'
+                script {
+                    sh "docker build -t $IMAGE_NAME ."
+                }
             }
-        }*/
+        }
+
+        stage('Push Docker Image to JFrog') {
+            steps {
+                withCredentials([string(credentialsId: 'access-jfrog', variable: 'JFROG_TOKEN')]) {
+                    sh "docker login trialy8qxe6.jfrog.io -u jenkins-ci -p $JFROG_TOKEN"
+                    sh "docker push $IMAGE_NAME"
+                }
+            }
+        }
     }
 }
