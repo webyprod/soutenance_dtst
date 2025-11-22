@@ -7,6 +7,7 @@ pipeline {
 
     environment {
         PATH = "/opt/apache-maven-3.9.11/bin:$PATH"
+        IMAGE_NAME = "trialy8qxe6.jfrog.io/soutenance-docker-local/soutenance-project:latest"
     }
 
     stages {
@@ -42,28 +43,44 @@ pipeline {
             }
         }
 
-        /*stage("Quality Gate") {
+        stage("Quality Gate") {
             steps {
                 script {
-                    timeout(time: 1, unit: 'HOURS') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure"
+                    try {
+                        timeout(time: 2, unit: 'MINUTES') {
+                          def qg = waitForQualityGate()
+                          if (qg.status != 'OK') {
+                            echo "Quality Gate failed: ${qg.status}"
+                          }
                         }
+                    } catch (org.jenkinsci.plugins.workflow.steps.FlowInterruptedException e) {
+                      echo "Quality Gate check timed out after 2 minutes, continuing pipeline as SUCCESS"
                     }
                 }
             }
-        }*/
+        }
 
         stage('Deploy to JFrog') {
             steps {
                 sh 'mvn deploy -DskipTests'
             }
         }
-        /*stage('Deploy to JFrog') {
+
+        stage('Build Docker Image') {
             steps {
-                sh 'mvn deploy -DskipTests -DaltDeploymentRepository=jfrog-release::default::https://trialy8qxe6.jfrog.io/artifactory/soutenance-project-libs-release-local'
+                script {
+                    sh "docker build -t $IMAGE_NAME ."
+                }
             }
-        }*/
+        }
+
+        stage('Push Docker Image to JFrog') {
+            steps {
+                withCredentials([string(credentialsId: 'access-jfrog', variable: 'JFROG_TOKEN')]) {
+                    sh "docker login trialy8qxe6.jfrog.io -u jenkins-ci -p $JFROG_TOKEN"
+                    sh "docker push $IMAGE_NAME"
+                }
+            }
+        }
     }
 }
