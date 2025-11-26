@@ -1,0 +1,345 @@
+// Se connecter sur l'instance ansible et l'installer
+
+- sudo apt update
+- sudo apt install software-properties-common
+- sudo add-apt-repository --yes --update ppa:ansible/ansible
+- sudo apt install ansible
+
+** Déplacer le awskey.pem dans le serveur dans le dossier /opt/
+
+// Configurer le fichier inventaire dans ansible (/opt/hosts)
+
+[jenkins-master]
+ <privateIp>
+[jenkins-master:vars]
+ ansible_user=ubuntu
+ ansible_ssh_private_key_file=/opt/awskey.pem
+
+[jenkins-slave]
+ <privateIp>
+[jenkins-slave:vars]
+ ansible_user=ubuntu
+ ansible_ssh_private_key_file=/opt/awskey.pem
+
+- chmod 400 key.pem
+
+- ansible all -i hosts -m ping   # dans le dossier /opt
+
+// Créer le playbook qui permet l'installation de Jenkins dans son serveur : jenkins-master-setup.yaml
+---
+- hosts: jenkins-master
+  become: true
+  tasks:
+    - name: Ajouter la clé Jenkins
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        state: present
+
+    - name: Ajouter le dépôt Jenkins
+      apt_repository:
+        repo: 'deb https://pkg.jenkins.io/debian-stable binary/'
+        state: present
+
+    - name: Mettre à jour le cache APT
+      apt:
+        update_cache: yes
+
+    - name: Installer Java 17
+      apt:
+        name: openjdk-17-jre
+        state: present
+
+    - name: Installer Jenkins
+      apt:
+        name: jenkins
+        state: present
+
+    - name: Activer Jenkins au démarrage
+      service:
+        name: jenkins
+        enabled: yes
+
+    - name: Démarrer Jenkins
+      service:
+        name: jenkins
+        state: started
+
+- ansible-playbook -i /opt/hosts jenkins-master-setup.yaml
+
+
+// Créer un playbook ansible qui permet l'installation de Maven sur son serveur : jenkins-slave-setup.yaml
+---
+- hosts: jenkins-slave
+  become: true 
+  tasks: 
+  - name: update ubuntu repo and cache 
+    apt: 
+      update_cache: yes  
+      cache_valid_time: 3600 
+
+  - name: install java 
+    apt: 
+      name: openjdk-17-jre
+      state: present
+
+  - name: download maven packages 
+    get_url:
+      url: https://dlcdn.apache.org/maven/maven-3/3.9.2/binaries/apache-maven-3.9.2-bin.tar.gz
+      dest: /opt
+
+  - name: extract maven packages 
+    unarchive:
+      src: /opt/apache-maven-3.9.2-bin.tar.gz
+      dest: /opt 
+      remote_src: yes
+  
+  - name: installer docker
+    apt:
+      name: docker.io
+      state: present
+
+  - name: demarrer services docker
+    service:
+      name: docker
+      state: started
+
+  - name: donner permissions 777 /var/run/docker.sock
+    file:
+      path: /var/run/docker.sock
+      state: file
+      mode: 0777
+
+  - name: demarrer docker au demarrage du serveur
+    service:
+      name: docker
+      enabled: yes
+
+- ansible-playbook -i /opt/hosts jenkins-slave-setup.yaml
+
+******** Preparer la liaison entre le jenkins-master et le jenkins-slave (maven-server)
+Se connecter sur jenkins/parametres/credentials/identifiants globaux/add
+- username with private key
+- renseigner un identifiant
+- username = ubuntu
+- private key = awskey.pem
+
+Sur jenkins/parametres/nodes/new/maven-slave (permanent agent)
+- Number of executors = 3
+- repertoire de travail = /home/ubuntu/jenkins
+- etiquette = maven
+- usage = utiliser ce noeud autant que possible
+- methode de lancement = launch agents via SSH
+  --> host = <privateIPMaven>
+      credentials = Maven-credentials
+      Host Key Verification Strategy = Non verifying Verification Strategy
+- disponibilité = Maintenir l'agent activé le plus longtemps possible
+
+********* OPTION 1 = projet pipeline : initialisation p1
+1/ config projet
+- pipeline from script SCM
+- git
+- repository = https://github.com/webyprod/soutenance_dtst.git
+- branch = master
+- script path = Jenkinsfile 
+
+2/ Ajouter le fichier Jenkinsfile dans le projet
+
+pipeline {
+    agent {
+        node { label 'maven' }
+    }
+
+    environment { PATH = "/opt/apache-maven-3.9.11/bin:$PATH" }
+
+    stages {
+        stage('Build project') {
+            steps {
+                sh 'mvn clean deploy'
+            }
+        }
+    }
+}
+
+*********** OPTION 2 = multibranche pipeline
+Dans les plugins, installer : "Multibranch Scan Webhook Trigger"
+- display Name: <any>
+- description: <any>
+- branch sources : git
+- project repository : https://github.com/webyprod/soutenance_dtst.git
+- Mode: Jenkinsfile
+- Scan Pipeline Multibranches Triggers: Scan by Webhook [token = <anyTokenJenkins>]
+
+Sur Github / Settings du repo / Webhook / Add 
+- payload URL = http://<publicIP>:8080/multibranch-webhook-trigger/invoke?token=<anyTokenJenkins>
+- content-type = Json
+- events = Just Event
+- submit
+
+
+******** Connecter Sonarcloud à Jenkins
+- Aller sur https://www.sonarsource.com/get-started/cloud/
+- Connexion avec Github
+- Profil / My Account / Security / Generate token / Copy
+- Sur Jenkins
+- parametres / credentials / add / secret Text / Copy token in "secret" / Submit
+
+
+******** Integrer Sonarqube avec Jenkins
+- Installer Sonarqube Scanner sur Jenkins
+- parametres / Systemes / Section Sonarqube / Ajouter Installation Sonarqube
+* name = <Nom-sonar-server>
+* server URL = https://sonarcloud.io
+* token = <tokenFromSonar>
+
+- parametres / Tools / Section Sonarqube Scanner / name = <Nom-sonar-scanner> / Click install auto / Add version
+
+
+********* Créer un projet Sonar 
+- Vérifier que l'organisation existe sinon le créer
+- Dans l'organisation, créer un projet
+- Recuperer dans l'administration du projet dans la rubrique informations : le projectKey et le nom de l'organisation
+- Créer un token
+
+
+********** Verifier que le plugin Jacoco est dans le POM
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.10</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<!-- attached to Maven test phase -->
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+
+********* Ajouter le stage Sonarqube dans Jenkinsfile
+stage('SonarQube Analysis') {
+
+            environment {
+                scannerHome = tool '<Nom-sonar-scanner>'
+            }
+            steps {
+                withSonarQubeEnv('<Nom-sonar-server>') {
+                   sh """ /home/ubuntu/jenkins/tools/hudson.plugins.<Nom-sonar-scanner>.SonarRunnerInstallation/sonar/bin/sonar-scanner \
+                            -Dsonar.projectKey=fox_soutenance-project \
+                            -Dsonar.organization=fox \
+                            -Dsonar.sources=src/main/java \
+                            -Dsonar.tests=src/test/java \
+                            -Dsonar.java.binaries=target/classes \
+                            -Dsonar.jacoco.reportPaths=target/jacoco.exec \
+                            -Dsonar.login=75ac4edd86b51e32bb64871bf13e4be9827cd7a8 """
+                }
+            }
+}
+
+*********** Ajouter le test unitaire dans le rapport Sonarqube
+stage("test") {
+  steps {
+    sh 'mvn surefire-report:report'
+  }
+}
+
+********** Ajouter le Quality Gate
+stage("Quality Gate") {
+  steps {
+    script {
+      timeout(time: 1, unit: 'HOURS') {
+        def qg = waitForQualityGate()
+        if (qg.status != 'OK') {
+          error "Pipeline aborted due to quality gate failure"
+        }
+      }
+    }
+  }
+}
+
+
+********** Configurer Jfrog
+Créer un compte sur Jfrog
+Jfrog : Administration / Section usermanagement - Access Tokens / Generate Token - Copy
+Jenkins : parametres / credentials / System / identifiants globaux / Add credentials / Mettre Username (mail connexion Jfrog) + Token Jfrog + id
+
+Installer plugin artifactory sur Jenkins
+
+********** Integrer Jfrog dans le jenkinsfile
+- jfrog artifactory URL = https://trialy8qxe6.jfrog.io/
+- artifact location = /home/ubuntu/jenkins/workspace/et-soutenance-dtst-multi_develop/target
+- credentials = jenkins-access-token
+
+Token = eyJ2ZXIiOiIyIiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYiLCJraWQiOiJBMlFfMEt1cU44TmtMNzVWcnFNbjdZLW5fSFNqMmlzR0NZQ3RLendFbXhRIn0.eyJzdWIiOiJqZmFjQDAxazlwNjRzeG44M3llMTFnYjJ5c3QwY3lyL3VzZXJzL21va2FkZGVtLmFsZXhAb3JhbmdlLmZyIiwic2NwIjoiYXBwbGllZC1wZXJtaXNzaW9ucy9hZG1pbiIsImF1ZCI6IipAKiIsImlzcyI6ImpmZmVAMDFrOXA2NHN4bjgzeWUxMWdiMnlzdDBjeXIiLCJpYXQiOjE3NjI4MjU1MDQsImp0aSI6ImIxN2Y3ZjFlLTk2MjMtNGJjYy1hMmE5LTdiZWUzZDRmZTBiNyIsInRpZCI6ImEwbXpidWprMnZycXcifQ.fOAueppSku08FWTxWObNdNHqe6hdw_RTIvZqT7ezBuUjkgLVJ1C_ina9nwUNI1lHk_dK2NWmaGqtFQ2ccb4PCas8SI-bi7n-sjY1VGU6WZTzezaNOKdQWqQgCKoZdQ4EKkOIwTSuqOIHoA7fmGljin_RRfCyQjK-3usHzwh1P8kUmnwMHbeKoidyUE_yft1tkfPKKwsHZOIHD9PLyHXuJgFEbW9BedHnabtplArFkNNYjevS5gSoTtTAkDjk7DZfz7opGaUnCwrUVvFhIV2Ill_5ZcamqI6aLhZGR-nuoa4xia-Sqhz89gRkR5S0QCD5c_tqfQ5AacdvZysfq2SiTg
+
+Token jenkins-ci = eyJ2ZXIiOiIyIiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYiLCJraWQiOiJBMlFfMEt1cU44TmtMNzVWcnFNbjdZLW5fSFNqMmlzR0NZQ3RLendFbXhRIn0.eyJzdWIiOiJqZmFjQDAxazlwNjRzeG44M3llMTFnYjJ5c3QwY3lyL3VzZXJzL2plbmtpbnMtY2kiLCJzY3AiOiJhcHBsaWVkLXBlcm1pc3Npb25zL2FkbWluIiwiYXVkIjoiKkAqIiwiaXNzIjoiamZmZUAwMWs5cDY0c3huODN5ZTExZ2IyeXN0MGN5ciIsImlhdCI6MTc2Mjk5ODg4NCwianRpIjoiOWJiMzc3YWItZjljNy00MGJiLWJmZWItYjdhZjBjNjdlYTAxIiwidGlkIjoiYTBtemJ1amsydnJxdyJ9.xU9j-apQo0r07wAC6eh64vLbLILWRJR24e_XWaAspSAjtejUlSvVVhzjHczfwUVsrFZNCD1q3UHtQuXPnx4h1wN79P36EeaT5Eyur9S9MgMSzCcQkf_7Cq3b-CslWOfPz10TLNJQXSNyaRMCSZqV9RBv2N0i_ZgkhFwj-XXyFuAZ53gLJdfjGGypqTogBa39nTw67U82W1WvrqIi9cVFhtA7lIipNkr7uM7Im_e4-uwjYBvQDB8WqTkLTNESLMZEbPtoZXp7m-lyAfO7oKy-00rrqyhG1t9YKYjFeWvaEo01it3PkUegAQRBzN8VXvYzibqFurPNRS5rpEyVQEi4KQ
+
+stage('Deploy to JFrog') {
+  steps {
+    sh 'mvn deploy -DskipTests'
+  }
+}
+
+Dans le pom.xml : 
+<distributionManagement>
+		<repository>
+			<id>jfrog-release</id>
+			<url>https://trialy8qxe6.jfrog.io/artifactory/soutenance-projet-libs-release-local</url> // Dossier jfrog où doit être envoyé le jar
+		</repository>
+</distributionManagement>
+
+Dans le settings.xml du jenkins-slave:
+<settings>
+  <servers>
+    <server>
+      <id>jfrog-release</id>
+      <username>jenkins-ci</username> // User jfrog qui deploie sur le dossier jfrog
+      <password>eyJ2ZXIiOiIyIiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYiLCJraWQiOiJBMlFfMEt1cU44TmtMNzVWcnFNbjdZLW5fSFNqMmlzR0NZQ3RLendFbXhRIn0.eyJzdWIiOiJqZmFjQDAxazlwNjRzeG44M3llMTFnYjJ5c3QwY3lyL3VzZXJzL2plbmtpbnMtY2kiLCJzY3AiOiJhcHBsaWVkLXBlcm1pc3Npb25zL2FkbWluIiwiYXVkIjoiKkAqIiwiaXNzIjoiamZmZUAwMWs5cDY0c3huODN5ZTExZ2IyeXN0MGN5ciIsImlhdCI6MTc2Mjk5ODg4NCwianRpIjoiOWJiMzc3YWItZjljNy00MGJiLWJmZWItYjdhZjBjNjdlYTAxIiwidGlkIjoiYTBtemJ1amsydnJxdyJ9.xU9j-apQo0r07wAC6eh64vLbLILWRJR24e_XWaAspSAjtejUlSvVVhzjHczfwUVsrFZNCD1q3UHtQuXPnx4h1wN79P36EeaT5Eyur9S9MgMSzCcQkf_7Cq3b-CslWOfPz10TLNJQXSNyaRMCSZqV9RBv2N0i_ZgkhFwj-XXyFuAZ53gLJdfjGGypqTogBa39nTw67U82W1WvrqIi9cVFhtA7lIipNkr7uM7Im_e4-uwjYBvQDB8WqTkLTNESLMZEbPtoZXp7m-lyAfO7oKy-00rrqyhG1t9YKYjFeWvaEo01it3PkUegAQRBzN8VXvYzibqFurPNRS5rpEyVQEi4KQ</password> // Son MDP
+      // Quand le user a été créé, tu as le username
+      // Pour avoir le mot de passe, crée un token et associe le au username et colle le ici
+    </server>
+  </servers>
+</settings>
+
+Ce user jfrog doit être créé sur Jfrog et doit avoir les droits pour deployer vers le dossier jfrog
+
+
+********** Integration de Docker
+
+// Créer un artifact repository Docker sur Jfrog
+// Installer le plugin docker pipeline sur jenkins
+// Se connecter sur jfrog en tant que jenkins-ci
+// Créer un token et copier
+// Sur jenkins / parametres / credentials / Global / add / type = secret text / Taper token dans secret / id = access-jfrog
+
+Sur Jenkinsfile
+
+environment {
+        IMAGE_NAME = "trialy8qxe6.jfrog.io/soutenance-docker-local/soutenance-project:latest"
+}
+
+stage('Build Docker Image') {
+  steps {
+    script {
+      sh "docker build -t $IMAGE_NAME ."
+    }
+  }
+}
+
+stage('Push Docker Image to JFrog') {
+  steps {
+    withCredentials([string(credentialsId: 'access-jfrog', variable: 'JFROG_TOKEN')]) {
+      sh "docker login trialy8qxe6.jfrog.io -u jenkins-ci -p $JFROG_TOKEN"
+      sh "docker push $IMAGE_NAME"
+    }
+  }
+}
+
