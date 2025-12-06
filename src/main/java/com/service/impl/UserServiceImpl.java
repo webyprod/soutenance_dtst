@@ -38,42 +38,17 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public Optional<User> update(User user) {
-		Optional<User> userOpt = userRepository.findById(user.getId());
-
-		if (userOpt.isPresent()) {
-			User existingUser = userOpt.get();
-
-			if (user.getUsername() != null) {
-				existingUser.setUsername(user.getUsername());
-			}
-
-			if (user.getPassword() != null) {
-				existingUser.setPassword(user.getPassword());
-			}
-
-			if (user.getFirstName() != null) {
-				existingUser.setFirstName(user.getFirstName());
-			}
-
-			if (user.getLastName() != null) {
-				existingUser.setLastName(user.getLastName());
-			}
-
-			if (user.getAge() != null) {
-				existingUser.setAge(user.getAge());
-			}
-
-			if (user.getCountry() != null) {
-				existingUser.setCountry(user.getCountry());
-			}
-
-			userRepository.save(existingUser);
-
-			return Optional.of(existingUser);
-		}
-
-		return Optional.empty();
+	public Optional<User> update(Long id, User user) {
+		return userRepository.findById(id)
+				.map(existing -> {
+					existing.setUsername(user.getUsername());
+					existing.setFirstName(user.getFirstName());
+					existing.setLastName(user.getLastName());
+					existing.setPassword(user.getPassword());
+					existing.setAge(user.getAge());
+					existing.setCountry(user.getCountry());
+					return userRepository.save(existing);
+				});
 	}
 
 	@Override

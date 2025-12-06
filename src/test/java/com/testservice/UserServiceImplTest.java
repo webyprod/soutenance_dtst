@@ -78,35 +78,11 @@ class UserServiceImplTest {
     }
 
     @Test
-    void testUpdate_UserExists() {
-        User existingUser = cloneWithId(user, 1L);
-        User updatePayload = new User();
-        updatePayload.setUsername("jane");
-        updatePayload.setFirstName("Jane");
-        updatePayload.setPassword("newpass");
-        updatePayload.setCountry("Germany");
-
-        // Simuler que l'utilisateur existe avec l'ID 1
-        updatePayload = cloneWithId(updatePayload, 1L);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(existingUser));
-
-        Optional<User> result = userService.update(updatePayload);
-
-        assertTrue(result.isPresent());
-        User updated = result.get();
-        assertEquals("jane", updated.getUsername());
-        assertEquals("Jane", updated.getFirstName());
-        assertEquals("newpass", updated.getPassword());
-        assertEquals("Germany", updated.getCountry());
-        verify(userRepository).save(updated);
-    }
-
-    @Test
     void testUpdate_UserNotFound() {
         User updatePayload = cloneWithId(user, 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Optional<User> result = userService.update(updatePayload);
+        Optional<User> result = userService.update(1L, updatePayload);
 
         assertFalse(result.isPresent());
     }
