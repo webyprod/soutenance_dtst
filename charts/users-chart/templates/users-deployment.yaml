@@ -14,9 +14,9 @@ spec:
     spec:
       containers:
         - name: users-container
-          image: {{ .Values.users.image }}
+          image: {{ .Values.usersBack.image }}
           ports:
-            - containerPort: {{ .Values.users.containerPort }}
+            - containerPort: {{ .Values.usersBack.containerPort }}
           env:
             - name: SPRING_DATASOURCE_URL
               value: jdbc:mysql://mysql-service:3306/userdb?serverTimezone=Europe/Paris
