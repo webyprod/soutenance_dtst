@@ -67,9 +67,13 @@
 
 	<distributionManagement>
 		<repository>
-			<id>jfrog-release</id>
-			<url>https://trialy8qxe6.jfrog.io/artifactory/soutenance-projet-libs-release-local</url>
+			<id>maven-releases</id>
+			<url>http://54.226.160.34:8081/repository/maven-releases/</url>
 		</repository>
+		<snapshotRepository>
+			<id>maven-snapshots</id>
+			<url>http://54.226.160.34:8081/repository/maven-snapshots/</url>
+		</snapshotRepository>
 	</distributionManagement>
 
 	<build>
