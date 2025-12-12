@@ -8,7 +8,7 @@ pipeline {
 
 	environment {
 		SCANNER_HOME = tool 'sonar-scanner'
-		REGISTRY = "54.160.225.182:8083"
+		REGISTRY = "http://54.160.225.182:8083"
         REPO = "soutenance-project"
         IMAGE = "${REGISTRY}/${REPO}/demo:latest"
 	}
