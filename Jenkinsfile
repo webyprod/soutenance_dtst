@@ -45,7 +45,7 @@ pipeline {
         stage('Build Docker Image') {
           steps {
             /*sh "docker build -t $IMAGE ."*/
-            docker build -t 54.160.225.182:8083/soutenance-project/demo:${BUILD_NUMBER} .
+            sh "docker build -t 54.160.225.182:8083/soutenance-project/demo:${BUILD_NUMBER} ."
           }
         }
         stage('Push Docker Image to Nexus') {
