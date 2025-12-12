@@ -1,86 +1,38 @@
 pipeline {
-    agent {
-        node {
-            label 'maven'
-        }
-    }
+	agent any
 
-    environment {
-        PATH = "/opt/apache-maven-3.9.11/bin:$PATH"
-        IMAGE_NAME = "trialy8qxe6.jfrog.io/soutenance-docker-local/soutenance-project:latest"
-    }
+	tools {
+		jdk 'JDK17'
+		maven 'maven3'
+	}
 
-    stages {
-        stage('Build project') {
-            steps {
-                sh 'mvn clean install'
-            }
-        }
+	environment {
+		SCANNER_HOME = tool 'sonar-scanner'
+	}
 
-        stage("test") {
-            steps {
-                sh 'mvn surefire-report:report'
-            }
-        }
-
-        stage('SonarQube Analysis') {
-
-            environment {
-                scannerHome = tool 'sonar'
-            }
-            steps {
-                withSonarQubeEnv('sonar') {
-                   //sh "${scannerHome}/bin/sonar-scanner"
-                   sh """ /home/ubuntu/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonar/bin/sonar-scanner \
-                            -Dsonar.projectKey=fox_soutenance-project \
-                            -Dsonar.organization=fox \
-                            -Dsonar.sources=src/main/java \
-                            -Dsonar.tests=src/test/java \
-                            -Dsonar.java.binaries=target/classes \
-                            -Dsonar.jacoco.reportPaths=target/jacoco.exec \
-                            -Dsonar.login=75ac4edd86b51e32bb64871bf13e4be9827cd7a8 """
-                }
-            }
-        }
-
-        stage("Quality Gate") {
-            steps {
-                script {
-                    try {
-                        timeout(time: 2, unit: 'MINUTES') {
-                          def qg = waitForQualityGate()
-                          if (qg.status != 'OK') {
-                            echo "Quality Gate failed: ${qg.status}"
-                          }
-                        }
-                    } catch (org.jenkinsci.plugins.workflow.steps.FlowInterruptedException e) {
-                      echo "Quality Gate check timed out after 2 minutes, continuing pipeline as SUCCESS"
-                    }
-                }
-            }
-        }
-
-        stage('Deploy to JFrog') {
-            steps {
-                sh 'mvn deploy -DskipTests'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    sh "docker build -t $IMAGE_NAME ."
-                }
-            }
-        }
-
-        stage('Push Docker Image to JFrog') {
-            steps {
-                withCredentials([string(credentialsId: 'access-jfrog', variable: 'JFROG_TOKEN')]) {
-                    sh "docker login trialy8qxe6.jfrog.io -u jenkins-ci -p $JFROG_TOKEN"
-                    sh "docker push $IMAGE_NAME"
-                }
-            }
-        }
-    }
+	stages {
+		stage('Compile') {
+			steps {
+				sh 'mvn compile'
+			}
+		}
+		stage('Unit tests') {
+			steps {
+				sh 'mvn test -DskipTests=true'
+			}
+		}
+		stage('Sonarqube Scan') {
+			steps {
+				 /* #withSonarQubeEnv(credentialsId: 'sonarserverId') {} */
+				 withSonarQubeEnv('sonar') { /*# sonar = nomServeurSonarQube*/
+					sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=Mission -Dsonar.projectName=Mission -Dsonar.java.binaries=. '''
+				 }
+			}
+		}
+		stage('Build project') {
+			steps {
+				sh 'mvn package -DskipTests=true'
+			}
+		}
+	}
 }
