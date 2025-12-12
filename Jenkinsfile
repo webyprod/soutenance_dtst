@@ -18,7 +18,7 @@ pipeline {
 		}
 		stage('Unit tests') {
 			steps {
-				sh 'mvn test -DskipTests=true'
+				sh 'mvn test'
 			}
 		}
 		stage('Sonarqube Scan') {
@@ -31,8 +31,13 @@ pipeline {
 		}
 		stage('Build project') {
 			steps {
-				sh 'mvn package -DskipTests=true'
+				sh 'mvn package -DskipTests'
 			}
 		}
+		stage('Deploy to Nexus') {
+           steps {
+             sh 'mvn deploy -DskipTests'
+           }
+        }
 	}
 }
