@@ -44,15 +44,16 @@ pipeline {
         }
         stage('Build Docker Image') {
           steps {
-            sh "docker build -t $IMAGE ."
+            /*sh "docker build -t $IMAGE ."*/
+            docker build -t 54.160.225.182:8083/soutenance-project/demo:${BUILD_NUMBER} .
           }
         }
         stage('Push Docker Image to Nexus') {
           steps {
             withCredentials([usernamePassword(credentialsId: 'nexus-docker-creds', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
               sh """
-                echo $NEXUS_PASS | docker login $REGISTRY -u $NEXUS_USER --password-stdin
-                docker push $IMAGE
+                echo $NEXUS_PASS | docker login http://54.160.225.182:8443 -u $NEXUS_USER --password-stdin
+                docker push 54.160.225.182:8443/soutenance-project/demo:${BUILD_NUMBER}
                  """
             }
           }
