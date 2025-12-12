@@ -52,8 +52,8 @@ pipeline {
           steps {
             withCredentials([usernamePassword(credentialsId: 'nexus-docker-creds', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
               sh """
-                echo $NEXUS_PASS | docker login http://54.160.225.182:8443 -u $NEXUS_USER --password-stdin
-                docker push 54.160.225.182:8443/soutenance-project/demo:${BUILD_NUMBER}
+                echo $NEXUS_PASS | docker login 54.160.225.182:8083 -u $NEXUS_USER --password-stdin
+                docker push 54.160.225.182:8083/soutenance-project/demo:${BUILD_NUMBER}
                  """
             }
           }
