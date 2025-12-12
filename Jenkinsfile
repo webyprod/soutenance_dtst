@@ -8,6 +8,9 @@ pipeline {
 
 	environment {
 		SCANNER_HOME = tool 'sonar-scanner'
+		REGISTRY = "54.160.225.182:8083"
+        REPO = "soutenance-project"
+        IMAGE = "${REGISTRY}/${REPO}/demo:latest"
 	}
 
 	stages {
@@ -38,6 +41,21 @@ pipeline {
            steps {
              sh 'mvn deploy -DskipTests'
            }
+        }
+        stage('Build Docker Image') {
+          steps {
+            sh "docker build -t $IMAGE ."
+          }
+        }
+        stage('Push Docker Image to Nexus') {
+          steps {
+            withCredentials([usernamePassword(credentialsId: 'nexus-docker-creds', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+              sh """
+                echo $NEXUS_PASS | docker login $REGISTRY -u $NEXUS_USER --password-stdin
+                docker push $IMAGE
+                 """
+            }
+          }
         }
 	}
 }
