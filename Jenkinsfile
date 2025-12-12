@@ -7,8 +7,8 @@ pipeline {
 	}
 
 	environment {
-		/*SCANNER_HOME = tool 'sonar-scanner'
-		REGISTRY = "http://54.160.225.182:8083"
+		SCANNER_HOME = tool 'sonar-scanner'
+		/*REGISTRY = "http://54.160.225.182:8083"
         REPO = "soutenance-project"
         IMAGE = "${REGISTRY}/${REPO}/demo:latest"*/
 
@@ -31,8 +31,7 @@ pipeline {
 		}
 		stage('Sonarqube Scan') {
 			steps {
-				 /* #withSonarQubeEnv(credentialsId: 'sonarserverId') {} */
-				 withSonarQubeEnv('sonar') { /*# sonar = nomServeurSonarQube*/
+				 withSonarQubeEnv('sonar') {
 					sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=Mission -Dsonar.projectName=Mission -Dsonar.java.binaries=. '''
 				 }
 			}
