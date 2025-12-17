@@ -20,7 +20,9 @@ pipeline {
 
         stage('Unit tests') {
             when {
-                branch 'dev'
+              expression {
+                return env.BRANCH_NAME == 'dev' || env.GIT_BRANCH == 'origin/dev'
+              }
             }
             steps {
                 sh 'mvn test'
@@ -29,7 +31,9 @@ pipeline {
 
         stage('Sonarqube Scan') {
             when {
-                branch 'dev'
+              expression {
+                return env.BRANCH_NAME == 'dev' || env.GIT_BRANCH == 'origin/dev'
+              }
             }
             steps {
                 withSonarQubeEnv('sonar') {
@@ -40,9 +44,8 @@ pipeline {
 
         stage('Build project') {
             when {
-                anyOf {
-                    branch 'stage'
-                    branch 'release'
+                expression {
+                    return env.BRANCH_NAME in ['stage', 'release']
                 }
             }
             steps {
@@ -52,9 +55,8 @@ pipeline {
 
         stage('Deploy to Nexus') {
             when {
-                anyOf {
-                    branch 'stage'
-                    branch 'release'
+                expression {
+                    return env.BRANCH_NAME in ['stage', 'release']
                 }
             }
             steps {
@@ -64,9 +66,8 @@ pipeline {
 
         stage('Build Docker Image') {
             when {
-                anyOf {
-                    branch 'stage'
-                    branch 'release'
+                expression {
+                    return env.BRANCH_NAME in ['stage', 'release']
                 }
             }
             steps {
@@ -78,7 +79,9 @@ pipeline {
 
         stage('Run Docker Container') {
             when {
-                branch 'stage'
+              expression {
+                return env.BRANCH_NAME == 'stage' || env.GIT_BRANCH == 'origin/stage'
+              }
             }
             steps {
                 script {
@@ -90,7 +93,9 @@ pipeline {
 
         stage('Push Docker Image to Docker Hub') {
             when {
-                branch 'release'
+              expression {
+                return env.BRANCH_NAME == 'release' || env.GIT_BRANCH == 'origin/release'
+              }
             }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
