@@ -45,7 +45,7 @@ pipeline {
         stage('Build project') {
             when {
                 expression {
-                    return env.BRANCH_NAME in ['stage', 'release']
+                    return env.BRANCH_NAME in ['stage', 'origin/stage', 'release', 'origin/release']
                 }
             }
             steps {
@@ -56,7 +56,7 @@ pipeline {
         stage('Deploy to Nexus') {
             when {
                 expression {
-                    return env.BRANCH_NAME in ['stage', 'release']
+                    return env.BRANCH_NAME in ['stage', 'origin/stage', 'release', 'origin/release']
                 }
             }
             steps {
@@ -67,7 +67,7 @@ pipeline {
         stage('Build Docker Image') {
             when {
                 expression {
-                    return env.BRANCH_NAME in ['stage', 'release']
+                    return env.BRANCH_NAME in ['stage', 'origin/stage', 'release', 'origin/release']
                 }
             }
             steps {
