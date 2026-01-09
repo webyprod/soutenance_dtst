@@ -19,15 +19,11 @@ public class LoadUsersInDB implements CommandLineRunner {
 	@Autowired
 	private UserRepository userRepository;
 
-	//@Autowired
-	//private PasswordEncoder passwordEncoder;
-
 	@Override
 	public void run(String... args) throws Exception {
 
-		if (userRepository.count() > 0) {
-			return;
-		}
+		// Supprime tous les utilisateurs existants
+		userRepository.deleteAll();
 		
 		User user1 = new User("FoxM", UUID.randomUUID().toString(), "Fox", "Mccloud", 30, "US");
 		User user2 = new User("FullC", UUID.randomUUID().toString(), "Full", "Coast", 24, "BRA");
