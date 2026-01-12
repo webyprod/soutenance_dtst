@@ -19,6 +19,14 @@
 		<java.version>17</java.version>
 	</properties>
 
+	<scm>
+		<connection>scm:git:https://github.com/webyprod/soutenance_dtst.git</connection>
+		<developerConnection>scm:git:https://github.com/webyprod/soutenance_dtst.git</developerConnection>
+		<url>https://github.com/webyprod/soutenance_dtst</url>
+		<tag>HEAD</tag>
+	</scm>
+
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
