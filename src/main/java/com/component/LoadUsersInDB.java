@@ -25,7 +25,7 @@ public class LoadUsersInDB implements CommandLineRunner {
 		// Supprime tous les utilisateurs existants
 		userRepository.deleteAll();
 		
-		User user1 = new User("FoxM", UUID.randomUUID().toString(), "Fox", "Mccloud", 30, "US");
+		User user1 = new User("FoxM", UUID.randomUUID().toString(), "Fox", "Mccloud", 35, "US");
 		User user2 = new User("FullC", UUID.randomUUID().toString(), "Full", "Coast", 24, "BRA");
 		User user3 = new User("JefferS", UUID.randomUUID().toString(), "Jeffer", "Son", 34, "MEX");
 		User user4 = new User("HenriD", UUID.randomUUID().toString(), "Henri", "Dumas", 19, "USA");
