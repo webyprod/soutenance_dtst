@@ -9,7 +9,7 @@
 	</parent>
 	<groupId>com</groupId>
 	<artifactId>demo</artifactId>
-	<version>0.0.9</version>
+	<version>0.0.10-SNAPSHOT</version>
 	<name>CRUD Application using Spring Boot</name>
 	<description>CRUD Application using Spring Boot</description>
 
@@ -21,7 +21,7 @@
 		<connection>scm:git:https://github.com/webyprod/soutenance_dtst.git</connection>
 		<developerConnection>scm:git:https://github.com/webyprod/soutenance_dtst.git</developerConnection>
 		<url>https://github.com/webyprod/soutenance_dtst</url>
-		<tag>0.0.9</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 
