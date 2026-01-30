@@ -28,7 +28,7 @@ public class LoadUsersInDB implements CommandLineRunner {
 		User user1 = new User("FoxM", UUID.randomUUID().toString(), "Fox", "Mccloud", 35, "US");
 		User user2 = new User("FullC", UUID.randomUUID().toString(), "Full", "Coast", 24, "BRA");
 		User user3 = new User("JefferS", UUID.randomUUID().toString(), "Jeffer", "Son", 34, "MEX");
-		User user4 = new User("HenriD", UUID.randomUUID().toString(), "Henri", "Dumas", 19, "USA");
+		User user4 = new User("HenriD", UUID.randomUUID().toString(), "Henri", "Dubois", 19, "USA");
 		User user5 = new User("AlexM", UUID.randomUUID().toString(), "Alex", "Macleod", 42, "CAN");
 		User user6 = new User("FernandoC", UUID.randomUUID().toString(), "Fernando", "Cruz", 19, "USA");
 		User user7 = new User("BearC", UUID.randomUUID().toString(), "Bear", "Creazy", 32, "USA");
